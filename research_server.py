@@ -64,3 +64,6 @@ def search_papers(topic: str, max_results: int = 5) -> List[str]:
         json.dump(papers_info, json_file, indent=2)
 
     return results
+
+if __name__ == "__main__":
+    mcp.run(transport="stdio")
