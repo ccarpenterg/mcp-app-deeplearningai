@@ -7,3 +7,11 @@ from contextlib import AsyncExitStack
 import json
 import asyncio
 
+load_dotenv()
+
+
+class ToolDefinition(TypedDict):
+    name: str
+    description: str
+    input_schema: Dict
+
