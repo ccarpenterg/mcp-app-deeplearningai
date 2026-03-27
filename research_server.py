@@ -65,5 +65,34 @@ def search_papers(topic: str, max_results: int = 5) -> List[str]:
 
     return results
 
+@mcp.tool()
+def extract_info(paper_id: str) -> str:
+    """
+    Search for information about a specific paper across all topic directories.
+
+    Args:
+        paper_id: The id of the paper to look for
+
+    Returns:
+        JSON string with paper information if found, error message if not found.
+    """
+    for topic in os.listdir(PAPER_DIR):
+        topic_dir = os.path.join(PAPER_DIR, topic)
+        if os.path.isdir(topic_dir):
+            papers_info_path = os.path.join(topic_dir, "papers_info.json")
+            if os.path.isfile(papers_info_path):
+                try:
+                    with open(papers_info_path, "r") as json_file:
+                        papers_info = json.load(json_file)
+                        if paper_id in papers_info:
+                            return json.dumps(papers_info[paper_id], indent=2)
+
+                except (FileNotFoundError, json.JSONDecodeError) as e:
+                    print(f"Error reading {papers_info_path}: {str(e)} ")
+                    continue
+
+
+    return f"There's no saved information related to paper {paper_id}."
+ 
 if __name__ == "__main__":
     mcp.run(transport="stdio")
