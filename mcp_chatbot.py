@@ -123,3 +123,41 @@ class MCP_ChatBot:
                     if(len(response.content) == 1 and response.content[0].type == 'text'):
                         process_query = False
 
+
+    async def chat_loop(self):
+        """Run an interactive chat loop."""
+        print("\nMCP ChatBot Started")
+        print("Type your queries or 'quit' to exit.\n")
+
+        while True:
+            try:
+                query = input("\nQuery: ").strip()
+
+                if query.lower() == 'quit':
+                    break
+
+                await self.process_query(query)
+                print("\n")
+
+            except Exception as e:
+                print(f"Error processing query: {str(e)}")
+
+    async def cleanup(self):
+        """Cleanly close all resources using AsyncExitStack."""
+        await self.exit_stack.aclose()
+
+async def main():
+    chatbot = MCP_ChatBot()
+    try:
+        await chatbot.connect_to_servers()
+        await chatbot.chat_loop()
+    finally:
+        await chatbot.cleanup()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
+
+            
+    
+            
