@@ -72,54 +72,54 @@ class MCP_ChatBot:
             print(f"Error loading server configuration: {e}")
             raise        
 
-async def process_query(self, query):
-    messages = [{'role': 'user', 'content': query}]
-    response = self.anthropic.messages.create(
-        max_tokens=2024,
-        model='claude-sonnet-4-6',
-        tools=self.available_tools,
-        messages=messages
-    )
+    async def process_query(self, query):
+        messages = [{'role': 'user', 'content': query}]
+        response = self.anthropic.messages.create(
+            max_tokens=2024,
+            model='claude-sonnet-4-6',
+            tools=self.available_tools,
+            messages=messages
+        )
 
-    process_query = True
-    while process_query:
-        assistant_content = []
-        for content in response.content:
-            if content.type == 'text':
-                print(content.text)
-                assistant_content.append(content)
-                if(len(response.content) == 1):
-                    process_query = False
+        process_query = True
+        while process_query:
+            assistant_content = []
+            for content in response.content:
+                if content.type == 'text':
+                    print(content.text)
+                    assistant_content.append(content)
+                    if(len(response.content) == 1):
+                        process_query = False
 
-            elif content.type == 'tool_use':
-                assistant_content.append(content)
-                messages.append({'role': 'assistant', 'content': assistant_content})
-                tool_id = content.id
-                tool_args = content.input
-                tool_name = content.name
+                elif content.type == 'tool_use':
+                    assistant_content.append(content)
+                    messages.append({'role': 'assistant', 'content': assistant_content})
+                    tool_id = content.id
+                    tool_args = content.input
+                    tool_name = content.name
 
-                print(f"Calling tool {tool_name} with args {tool_args}")
+                    print(f"Calling tool {tool_name} with args {tool_args}")
 
-                session = self.tool_to_session.get(tool_name)
-                result = await session.call_tool(tool_name, arguments=tool_args)
-                messages.append({
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "tool_result",
-                            "tool_use_id": tool_id,
-                            "content": result.result,
-                        }
-                    ]
-                })
+                    session = self.tool_to_session.get(tool_name)
+                    result = await session.call_tool(tool_name, arguments=tool_args)
+                    messages.append({
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "tool_result",
+                                "tool_use_id": tool_id,
+                                "content": result.result,
+                            }
+                        ]
+                    })
 
-                response = self.anthropic.messages.create(
-                    max_tokens=2024,
-                    model='claude-sonnet-4-6',
-                    tools=self.available_tools,
-                    messages=messages
-                )
+                    response = self.anthropic.messages.create(
+                        max_tokens=2024,
+                        model='claude-sonnet-4-6',
+                        tools=self.available_tools,
+                        messages=messages
+                    )
 
-                if(len(response.content) == 1 and response.content[0].type == 'text'):
-                    process_query = False
-                    
+                    if(len(response.content) == 1 and response.content[0].type == 'text'):
+                        process_query = False
+
