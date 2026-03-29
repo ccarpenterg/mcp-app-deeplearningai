@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 from google import genai
-from google.genai import types
+from google.genai import types as genai_types
 from mcp import ClientSession, StdioServerParameters, types
 from mcp.client.stdio import stdio_client
 from typing import List, Dict, TypedDict
@@ -85,22 +85,18 @@ class MCP_ChatBot:
             }
             tools.append(tool_def)
         return [{"function_declarations": tools}]
+        return types.Tool(functionDeclarations=tools)
 
     async def process_query(self, query):
-        gemini_tools = self._convert_tools_for_gemini()
-        
+        tools = self._convert_tools_for_gemini()
+        config = genai_types.GenerateContentConfig(tools=tools)
+
         # Create chat session with history
-        chat = self.gemini_client.chats.create(model="gemini-2.0-flash")
+        chat = self.gemini_client.chats.create(model="gemini-2.0-flash", config=config)
         
         # Generate initial response with tools enabled
-        response = chat.send_message(
-            query,
-            generation_config=genai.types.GenerationConfig(
-                max_output_tokens=2048,
-            ),
-            tools=gemini_tools,
-        )
-
+        response = chat.send_message(query)
+      
         process_query = True
         while process_query:
             # Check if the response contains function calls
@@ -132,7 +128,7 @@ class MCP_ChatBot:
                                 generation_config=genai.types.GenerationConfig(
                                     max_output_tokens=2048,
                                 ),
-                                tools=gemini_tools,
+                                tools=tools,
                             )
                         else:
                             print(f"Tool {tool_name} not found")
@@ -141,7 +137,7 @@ class MCP_ChatBot:
                                 generation_config=genai.types.GenerationConfig(
                                     max_output_tokens=2048,
                                 ),
-                                tools=gemini_tools,
+                                tools=tools,
                             )
                         break
                     elif hasattr(part, 'text') and part.text:
