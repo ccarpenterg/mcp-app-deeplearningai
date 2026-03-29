@@ -113,7 +113,7 @@ class MCP_ChatBot:
 
                 elif part.function_call:
                     print(f"Calling: {part.function_call.name}")
-                    print(f"Arguments: {part.function_call.arguments}")
+                    print(f"Arguments: {part.function_call.args}")
 
             
             process_query = False
