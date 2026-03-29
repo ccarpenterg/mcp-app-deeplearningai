@@ -91,61 +91,32 @@ class MCP_ChatBot:
         tools = self._convert_tools_for_gemini()
         config = genai_types.GenerateContentConfig(tools=tools)
 
+        # Generate initial response with tools enabled
+        response = await self.gemini_client.aio.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=query,
+            config=config
+        )
+
         # Create chat session with history
-        chat = self.gemini_client.chats.create(model="gemini-2.0-flash", config=config)
+        #chat = self.gemini_client.chats.create(model="gemini-2.0-flash", config=config)
         
         # Generate initial response with tools enabled
-        response = chat.send_message(query)
+        #response = chat.send_message(query)
       
         process_query = True
         while process_query:
-            # Check if the response contains function calls
-            if response.candidates and response.candidates[0].content.parts:
-                for part in response.candidates[0].content.parts:
-                    # Check for function call
-                    if hasattr(part, 'function_call') and part.function_call:
-                        tool_name = part.function_call.name
-                        tool_args = dict(part.function_call.args)
-                        
-                        print(f"Calling tool {tool_name} with args {tool_args}")
-                        
-                        session = self.tool_to_session.get(tool_name)
-                        if session:
-                            result = await session.call_tool(tool_name, arguments=tool_args)
-                            result_str = json.dumps(result.result) if not isinstance(result.result, str) else result.result
-                            
-                            # Send the tool result back to Gemini
-                            response = chat.send_message(
-                                genai.protos.Content(
-                                    role="function",
-                                    parts=[genai.protos.Part(
-                                        function_response=genai.protos.FunctionResponse(
-                                            name=tool_name,
-                                            response={"result": result_str}
-                                        )
-                                    )]
-                                ),
-                                generation_config=genai.types.GenerationConfig(
-                                    max_output_tokens=2048,
-                                ),
-                                tools=tools,
-                            )
-                        else:
-                            print(f"Tool {tool_name} not found")
-                            response = chat.send_message(
-                                f"Error: Tool {tool_name} not available",
-                                generation_config=genai.types.GenerationConfig(
-                                    max_output_tokens=2048,
-                                ),
-                                tools=tools,
-                            )
-                        break
-                    elif hasattr(part, 'text') and part.text:
-                        print(part.text)
-                        if len(response.candidates[0].content.parts) == 1:
-                            process_query = False
-            else:
-                process_query = False
+            print("\nGemini Response:")
+            for part in response.parts:
+                if part.text:
+                    print(part.text)
+
+                elif part.function_call:
+                    print(f"Calling: {part.function_call.name}")
+                    print(f"Arguments: {part.function_call.arguments}")
+
+            
+            process_query = False
 
 
     async def chat_loop(self):
