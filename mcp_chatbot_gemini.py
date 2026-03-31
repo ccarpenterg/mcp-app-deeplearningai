@@ -91,10 +91,14 @@ class MCP_ChatBot:
         tools = self._convert_tools_for_gemini()
         config = genai_types.GenerateContentConfig(tools=tools)
 
+        history = [
+            genai_types.Content(role="user", parts=[genai_types.Part(text=query)])
+        ]
+
         # Generate initial response with tools enabled
         response = await self.gemini_client.aio.models.generate_content(
             model="gemini-2.5-flash",
-            contents=query,
+            contents=history,
             config=config
         )
 
