@@ -114,7 +114,11 @@ class MCP_ChatBot:
             for part in response.parts:
                 if part.text:
                     print(part.text)
-                    history.append(response.candidates[0].content)
+
+                    history.append(genai_types.Content(
+                        role="assistant",
+                        parts=[part]
+                    ))
                     if(len(response.parts) == 1):
                         process_query = False
 
@@ -131,13 +135,13 @@ class MCP_ChatBot:
                     tool_args = part.function_call.args
 
                     session = self.tool_to_session.get(tool_name)
-                    result = await session.call_tool(tool_name, argumetns=tool_args)
+                    result = await session.call_tool(tool_name, arguments=tool_args)
 
                     tool_content = genai_types.Content(
                         role="tool",
                         parts=[
                             genai_types.Part(
-                                function_reponse=genai_types.FunctionResponse(
+                                function_response=genai_types.FunctionResponse(
                                     name=tool_name,
                                     response={"result": result.content}
                                 )
@@ -148,12 +152,15 @@ class MCP_ChatBot:
                     
                     response = await self.gemini_client.aio.models.generate_content(
                         model="gemini-2.5-flash",
-                        history=history,
+                        contents=history,
                         config=config
                     )
 
+                    if(len(response.parts) == 1 and response.parts[0].text):
+                        print(response.parts[0].text)
+                        process_query = False
+
             
-            process_query = False
 
 
     async def chat_loop(self):
