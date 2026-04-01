@@ -114,10 +114,43 @@ class MCP_ChatBot:
             for part in response.parts:
                 if part.text:
                     print(part.text)
+                    history.append(response.candidates[0].content)
+                    if(len(response.parts) == 1):
+                        process_query = False
 
                 elif part.function_call:
+                    history.append(genai_types.Content(
+                        role="assistant",
+                        parts=[part]
+                    ))
+
                     print(f"Calling: {part.function_call.name}")
                     print(f"Arguments: {part.function_call.args}")
+
+                    tool_name = part.function_call.name
+                    tool_args = part.function_call.args
+
+                    session = self.tool_to_session.get(tool_name)
+                    result = await session.call_tool(tool_name, argumetns=tool_args)
+
+                    tool_content = genai_types.Content(
+                        role="tool",
+                        parts=[
+                            genai_types.Part(
+                                function_reponse=genai_types.FunctionResponse(
+                                    name=tool_name,
+                                    response={"result": result.content}
+                                )
+                            )
+                        ])
+                    
+                    history.append(tool_content)
+                    
+                    response = await self.gemini_client.aio.models.generate_content(
+                        model="gemini-2.5-flash",
+                        history=history,
+                        config=config
+                    )
 
             
             process_query = False
